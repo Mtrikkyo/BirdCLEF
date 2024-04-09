@@ -1,0 +1,3 @@
+ipykernel
+torch=2.2.2
+timm=0.9.16
