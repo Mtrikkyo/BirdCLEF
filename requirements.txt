@@ -2,3 +2,5 @@ ipykernel
 torch=2.2.2
 timm=0.9.16
 librosa=0.10.1
+matplotlib=3.8.4
+pandas=2.2.1
