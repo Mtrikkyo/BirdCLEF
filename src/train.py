@@ -1,14 +1,17 @@
 #!/root/.pyenv/versions/3.11.5/bin/python
 import argparse
 from argparse import ArgumentParser
+from collections import OrderedDict
 from curses import meta
 import os
+from typing import Type
 
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from timm.optim import create_optimizer_v2
 from timm.scheduler import create_scheduler_v2
+from timm.utils import AverageMeter, accuracy
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
@@ -44,6 +47,8 @@ args = parser.parse_args()
 
 def main():
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # initialize of W&B
 
     # load train_metadata.csv
     meta_df = pd.read_csv(os.path.join(args.data_dir, "train_metadata"))
@@ -93,3 +98,53 @@ def main():
     valid_loss_fn = nn.CrossEntropyLoss()
 
     # train&eval
+
+
+def train_one_epoch(
+    epoch: int,
+    model: Type[nn.Module],
+    loader,
+    loss_fn,
+    optimizer,
+    device: torch.device,
+) -> None:
+    model.train()
+
+    for inputs, labels in loader:
+        inputs, labels = inputs.to(device), labels.to(device)
+
+        outputs = model(inputs)
+
+        loss = loss_fn(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+
+def eval(
+    epoch: int,
+    model: Type[nn.Module],
+    loader: Type[DataLoader],
+    loss_fn,
+    device: torch.device,
+) -> OrderedDict:
+    top1_m = AverageMeter()
+    loss_m = AverageMeter()
+    model.eval()
+
+    for inputs, labels in loader:
+        inputs, labels = inputs.to(device), labels.to(device)
+
+        outputs = model(inputs)
+
+        loss = loss_fn(outputs, labels)
+        top1 = accuracy(outputs, labels)
+
+        loss_m.update(loss.item(), inputs.size(0))
+        top1_m.update(top1.item(), outputs.size(0))
+
+    return OrderedDict([("loss", loss_m), ("top1", top1_m)])
+
+
+if __name__ == "__main__":
+
+    main()
