@@ -5,11 +5,13 @@ from curses import meta
 import os
 
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
 from timm.optim import create_optimizer_v2
 from timm.scheduler import create_scheduler_v2
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 import wandb
 
 from models import Toymodel
@@ -82,3 +84,5 @@ def main():
     scheduler = create_scheduler_v2(optimizer, "cosine")
 
     # loss function setup
+    train_loss_fn = nn.CrossEntropyLoss()
+    valid_loss_fn = nn.CrossEntropyLoss()
