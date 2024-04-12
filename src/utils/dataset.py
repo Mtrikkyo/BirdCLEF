@@ -2,7 +2,7 @@
 """make custom Dataset Class
 """
 
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import torch
@@ -19,9 +19,7 @@ class AudioDataset(Dataset):
         sampling_rate: int,
         spec_mode: str = "melspectrogram",
         ref=np.min,
-        transforms: v2.Compose = v2.Compose(
-            [v2.ToImage(), v2.ToDtype(torch.float32, scale=True)]
-        ),
+        transforms: Optional[v2.Compose] = None,
     ) -> None:
         """initialize of custom datasets.
 
@@ -46,11 +44,14 @@ class AudioDataset(Dataset):
         audio_path = self.audio_paths[index]
         audio, _ = librosa.load(audio_path)
 
+        # TODO:Add other method to convert image.
         if self.spec_mode == "melspectrogram":
             spec = self.melspectrogram_transform(audio)
 
-        image = self.transforms(spec)
-        return (image, label)
+        if self.transforms is not None:
+            spec = self.transforms(spec)
+
+        return (spec, label)
 
     def melspectrogram_transform(self, audio: np.ndarray) -> np.ndarray:
         """transform audio array to melspectrogram image tensor.
@@ -61,13 +62,27 @@ class AudioDataset(Dataset):
         Returns:
             np.ndarray: melspectrogram image tensor.
         """
-        spec = librosa.feature.melspectrogram(audio, self.sampling_rate)
+        spec = librosa.feature.melspectrogram(y=audio, sr=self.sampling_rate)
         spec = librosa.power_to_db(spec, ref=self.ref)
-
+        spec = np.stack([spec] * 3)
+        spec = torch.tensor(spec)
         return spec
 
 
 if __name__ == "__main__":
+    TRAIN_AUDIO_PATH = "/workdir/mount/data/train_audio"
     import pandas as pd
 
     metadeta_df = pd.read_csv("/workdir/mount/data/train_metadata.csv")
+    metadeta_df["filename"] = metadeta_df["filename"].apply(
+        lambda x: f"{TRAIN_AUDIO_PATH}/{x}"
+    )
+
+    dataset = AudioDataset(
+        labels=metadeta_df["primary_label"].to_numpy(),
+        audio_paths=metadeta_df["filename"].to_numpy(),
+        sampling_rate=22050,
+        transforms=v2.Resize((224, 224)),
+    )
+
+    print(dataset[0][0].size())
