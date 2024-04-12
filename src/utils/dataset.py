@@ -26,10 +26,10 @@ class AudioDataset(Dataset):
         """initialize of custom datasets.
 
         Args:
-            labels (np.ndarray): _description_
-            audio_paths (np.ndarray): _description_
-            sampling_rate (int): _description_
-            transforms (v2.Compose, optional): _description_. Defaults to v2.Compose( [v2.ToImage(), v2.ToDtype(torch.float32, scale=True)] ).
+            labels (np.ndarray): datasets' label.
+            audio_paths (np.ndarray): array which include path to audio data.
+            sampling_rate (int): sampling rate to load audio data.
+            transforms (v2.Compose, optional): transform for audio-image tensor. Defaults to v2.Compose( [v2.ToImage(), v2.ToDtype(torch.float32, scale=True)] ).
         """
         self.labels = labels
         self.audio_paths = audio_paths
