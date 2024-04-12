@@ -34,6 +34,7 @@ class AudioDataset(Dataset):
         self.labels = labels
         self.audio_paths = audio_paths
         self.sampling_rate = sampling_rate
+        self.spec_mode = spec_mode
         self.ref = ref
         self.transforms = transforms
 
