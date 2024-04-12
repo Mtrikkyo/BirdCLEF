@@ -17,7 +17,7 @@ class AudioDataset(Dataset):
         labels: np.ndarray,
         audio_paths: np.ndarray,
         sampling_rate: int,
-        spec_mode="mel-spectrogram",
+        spec_mode: str = "melspectrogram",
         ref=np.min,
         transforms: v2.Compose = v2.Compose(
             [v2.ToImage(), v2.ToDtype(torch.float32, scale=True)]
@@ -45,14 +45,21 @@ class AudioDataset(Dataset):
         audio_path = self.audio_paths[index]
         audio, _ = librosa.load(audio_path)
 
-        if self.spec_mode == "mel-spectrogram":
-            spec = self._convert_melspectrogram(audio)
+        if self.spec_mode == "melspectrogram":
+            spec = self.melspectrogram_transform(audio)
 
         image = self.transforms(spec)
         return (image, label)
 
-    def _convert_melspectrogram(self, audio: np.ndarray) -> np.ndarray:
+    def melspectrogram_transform(self, audio: np.ndarray) -> np.ndarray:
+        """transform audio array to melspectrogram image tensor.
 
+        Args:
+            audio (np.ndarray): audio array.
+
+        Returns:
+            np.ndarray: melspectrogram image tensor.
+        """
         spec = librosa.feature.melspectrogram(audio, self.sampling_rate)
         spec = librosa.power_to_db(spec, ref=self.ref)
 
