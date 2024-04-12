@@ -53,6 +53,10 @@ def main():
         lambda x: f"{args.data_dir}/train_audio/{x}"
     )
 
+    # apply LabelEncoding to label.
+    encoder = LabelEncoder()
+    meta_df["primary_label"] = encoder.fit_transform(meta_df["primary_label"])
+
     # make dataset
     dataset = AudioDataset(
         labels=meta_df["primary_label"].to_numpy(),
@@ -84,5 +88,8 @@ def main():
     scheduler = create_scheduler_v2(optimizer, "cosine")
 
     # loss function setup
+    # TODO handle with mixuped inputs
     train_loss_fn = nn.CrossEntropyLoss()
     valid_loss_fn = nn.CrossEntropyLoss()
+
+    # train&eval
