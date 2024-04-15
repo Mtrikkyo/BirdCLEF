@@ -59,7 +59,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def main():
 
     # load train_metadata.csv
-    meta_df = pd.read_csv(os.path.join(args.data_dir, "train_metadata"))
+    meta_df = pd.read_csv(os.path.join(args.data_dir, "train_metadata.csv"))
 
     # apply audio data path to DataFrame
     meta_df["filename"] = meta_df["filename"].apply(
