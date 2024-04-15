@@ -4,6 +4,7 @@
 
 from typing import Any, Optional
 
+from datetime import datetime
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -72,6 +73,7 @@ class AudioDataset(Dataset):
 if __name__ == "__main__":
     TRAIN_AUDIO_PATH = "/workdir/mount/data/train_audio"
     import pandas as pd
+    from torch.utils.data import DataLoader
 
     metadeta_df = pd.read_csv("/workdir/mount/data/train_metadata.csv")
     metadeta_df["filename"] = metadeta_df["filename"].apply(
@@ -85,4 +87,8 @@ if __name__ == "__main__":
         transforms=v2.Resize((224, 224)),
     )
 
-    print(dataset[0][0].size())
+    start_time = datetime.now()
+    loader = DataLoader(dataset, batch_size=32)
+    end_time = datetime.now()
+
+    print(end_time - start_time)
