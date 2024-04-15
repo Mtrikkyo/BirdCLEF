@@ -85,6 +85,9 @@ MODEL_LIST = {
 
 def main():
 
+    # make save dir
+    os.makedirs(args.save_dir, mode=777, exist_ok=False)
+
     # load train_metadata.csv
     meta_df = pd.read_csv(os.path.join(args.data_dir, "train_metadata.csv"))
 
