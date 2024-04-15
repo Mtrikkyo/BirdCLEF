@@ -11,6 +11,7 @@ from timm.utils import AverageMeter, accuracy, update_summary
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+import torchvision.transforms.v2 as v2
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
@@ -39,6 +40,7 @@ parser.add_argument(
     "-b",
     "--batch_size",
     type=int,
+    default=32,
     help="""number of data instaces per mini-batch.""",
 )
 
@@ -78,18 +80,23 @@ def main():
     encoder = LabelEncoder()
     meta_df["primary_label"] = encoder.fit_transform(meta_df["primary_label"])
 
-    # make dataset
-    dataset = AudioDataset(
-        labels=meta_df["primary_label"].to_numpy(),
-        audio_paths=meta_df["filename"].to_numpy(),
-        sampling_rate=20050,
-    )
-    print("making dataset is over.")
-
     # train_test_split
-    train_dataset, valid_dataset = train_test_split(dataset, test_size=1 / 6)
-    train_dataset = train_dataset.to(DEVICE)
-    valid_dataset = valid_dataset.to(DEVICE)
+    train_meta_df, valid_meta_df = train_test_split(meta_df, test_size=1 / 6)
+
+    # make dataset
+    train_dataset = AudioDataset(
+        labels=train_meta_df["primary_label"].to_numpy(),
+        audio_paths=train_meta_df["filename"].to_numpy(),
+        sampling_rate=20050,
+        transforms=v2.Resize((224, 224)),
+    )
+
+    valid_dataset = AudioDataset(
+        labels=valid_meta_df["primary_label"].to_numpy(),
+        audio_paths=valid_meta_df["filename"].to_numpy(),
+        sampling_rate=20050,
+        transforms=v2.Resize((224, 224)),
+    )
 
     # make dataloader
     train_loader = DataLoader(
@@ -112,7 +119,7 @@ def main():
 
     # optimizer setup
     optimizer = create_optimizer_v2(
-        model.parameters,
+        model.parameters(),
         opt="adamw",
         lr=args.lr,
         weight_decay=0,
@@ -120,7 +127,7 @@ def main():
     )
 
     # scheduler setup
-    scheduler = create_scheduler_v2(
+    scheduler, _ = create_scheduler_v2(
         optimizer,
         "cosine",
         warmup_prefix=True,
@@ -137,7 +144,7 @@ def main():
     artifact = wandb.Artifact("model", type="model")
 
     # train&eval
-    for epoch in tqdm(range()):
+    for epoch in tqdm(range(args.epochs)):
         scheduler.step(epoch)
 
         train_one_epoch(
