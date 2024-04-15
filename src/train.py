@@ -233,10 +233,10 @@ def eval(
 
     metrics = OrderedDict(
         [
-            ("loss", loss_m),
-            ("top1", top1_m),
-            ("top5", top5_m),
-            ("top10", top10_m),
+            ("loss", loss_m.avg),
+            ("top1", top1_m.avg),
+            ("top5", top5_m.avg),
+            ("top10", top10_m.avg),
         ]
     )
 
