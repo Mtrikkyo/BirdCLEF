@@ -47,8 +47,10 @@ parser.add_argument(
 args = parser.parse_args()
 
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
 def main():
-    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # initialize of W&B
 
@@ -102,12 +104,13 @@ def main():
     # train&eval
     for epoch in tqdm(range()):
 
-        train_one_epoch(
+        train_one_epoch(epoch, model, train_loader, train_loss_fn, optimizer, DEVICE)
+
+        train_metrics = eval(
             epoch,
             model,
             train_loader,
             train_loss_fn,
-            optimizer,
         )
 
 
