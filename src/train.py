@@ -64,6 +64,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def main():
+    print(DEVICE)
 
     # load train_metadata.csv
     meta_df = pd.read_csv(os.path.join(args.data_dir, "train_metadata.csv"))
@@ -83,13 +84,27 @@ def main():
         audio_paths=meta_df["filename"].to_numpy(),
         sampling_rate=20050,
     )
+    print("making dataset is over.")
 
     # train_test_split
     train_dataset, valid_dataset = train_test_split(dataset, test_size=1 / 6)
+    train_dataset = train_dataset.to(DEVICE)
+    valid_dataset = valid_dataset.to(DEVICE)
 
     # make dataloader
-    train_loader = DataLoader(train_dataset)
-    valid_loader = DataLoader(valid_dataset)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=args.batch_size,
+        pin_memory=True,
+        num_workers=8,
+    )
+    print("making train_loader is over.")
+    valid_loader = DataLoader(
+        valid_dataset,
+        batch_size=args.batch_size,
+        pin_memory=True,
+        num_workers=8,
+    )
 
     # make model instance
     model = Toymodel()
