@@ -6,6 +6,7 @@ from curses import meta
 import os
 from typing import Type
 
+from sklearn import metrics
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -15,6 +16,7 @@ from timm.utils import AverageMeter, accuracy
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from tqdm import tqdm
 import wandb
 
 from models import Toymodel
@@ -98,6 +100,15 @@ def main():
     valid_loss_fn = nn.CrossEntropyLoss()
 
     # train&eval
+    for epoch in tqdm(range()):
+
+        train_one_epoch(
+            epoch,
+            model,
+            train_loader,
+            train_loss_fn,
+            optimizer,
+        )
 
 
 def train_one_epoch(
@@ -109,6 +120,7 @@ def train_one_epoch(
     device: torch.device,
 ) -> None:
     model.train()
+    optimizer.zero_grad()
 
     for inputs, labels in loader:
         inputs, labels = inputs.to(device), labels.to(device)
@@ -127,8 +139,11 @@ def eval(
     loss_fn,
     device: torch.device,
 ) -> OrderedDict:
-    top1_m = AverageMeter()
     loss_m = AverageMeter()
+    top1_m = AverageMeter()
+    top5_m = AverageMeter()
+    top10_m = AverageMeter()
+
     model.eval()
 
     for inputs, labels in loader:
@@ -137,12 +152,23 @@ def eval(
         outputs = model(inputs)
 
         loss = loss_fn(outputs, labels)
-        top1 = accuracy(outputs, labels)
+        top1, top5, top10 = accuracy(outputs, labels, topk=(1, 5, 10))
 
         loss_m.update(loss.item(), inputs.size(0))
         top1_m.update(top1.item(), outputs.size(0))
+        top5_m.update(top5.item(), outputs.size(0))
+        top10_m.update(top10.item(), outputs.size(0))
 
-    return OrderedDict([("loss", loss_m), ("top1", top1_m)])
+    metrics = OrderedDict(
+        [
+            ("loss", loss_m),
+            ("top1", top1_m),
+            ("top5", top5_m),
+            ("top10", top10_m),
+        ]
+    )
+
+    return metrics
 
 
 if __name__ == "__main__":
