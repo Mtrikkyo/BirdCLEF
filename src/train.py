@@ -1,22 +1,20 @@
 #!/root/.pyenv/versions/3.11.5/bin/python
-import argparse
 from argparse import ArgumentParser
 from collections import OrderedDict
-from curses import meta
 import os
 from typing import Type
 
-from sklearn import metrics
+import pandas as pd
+from timm.optim import create_optimizer_v2
+from timm.scheduler import create_scheduler_v2
+from timm.utils import AverageMeter, accuracy, update_summary
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from timm.optim import create_optimizer_v2
-from timm.scheduler import create_scheduler_v2
-from timm.utils import AverageMeter, accuracy
-import pandas as pd
+from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from tqdm import tqdm
+
 import wandb
 
 from models import Toymodel
@@ -51,8 +49,6 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def main():
-
-    # initialize of W&B
 
     # load train_metadata.csv
     meta_df = pd.read_csv(os.path.join(args.data_dir, "train_metadata"))
@@ -94,17 +90,33 @@ def main():
     )
 
     # scheduler setup
-    scheduler = create_scheduler_v2(optimizer, "cosine")
+    scheduler = create_scheduler_v2(
+        optimizer,
+        "cosine",
+        warmup_prefix=True,
+    )
 
     # loss function setup
     # TODO handle with mixuped inputs
     train_loss_fn = nn.CrossEntropyLoss()
     valid_loss_fn = nn.CrossEntropyLoss()
 
+    # initialize of W&B
+    run = wandb.init(project="BirdCLEF")
+    run.save()
+    artifact = wandb.Artifact("model", type="model")
+
     # train&eval
     for epoch in tqdm(range()):
+        scheduler.step(epoch)
 
-        train_one_epoch(epoch, model, train_loader, train_loss_fn, optimizer, DEVICE)
+        train_one_epoch(
+            epoch,
+            model,
+            train_loader,
+            train_loss_fn,
+            optimizer,
+        )
 
         train_metrics = eval(
             epoch,
@@ -113,6 +125,28 @@ def main():
             train_loss_fn,
         )
 
+        eval_metrics = eval(
+            epoch,
+            model,
+            valid_loader,
+            valid_loss_fn,
+        )
+
+        lrs = [param_group["lr"] for param_group in optimizer.param_groups]
+        update_summary(
+            epoch=epoch,
+            train_metrics=train_metrics,
+            eval_metrics=eval_metrics,
+            filename=os.path.join(args.save_dir, "summary.csv"),
+            lr=sum(lrs) / len(lrs),
+            write_header=epoch == 0,
+            log_wandb=True,
+        )
+        torch.save(model.state_dict(), os.path.join(args.save_dir, "model.pt"))
+        artifact.add_file(os.path.join(args.save_dir, "model.pt"))
+        run.log_artifact(artifact)
+    run.finish()
+
 
 def train_one_epoch(
     epoch: int,
@@ -120,13 +154,12 @@ def train_one_epoch(
     loader,
     loss_fn,
     optimizer,
-    device: torch.device,
 ) -> None:
     model.train()
     optimizer.zero_grad()
 
     for inputs, labels in loader:
-        inputs, labels = inputs.to(device), labels.to(device)
+        inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
 
         outputs = model(inputs)
 
@@ -140,7 +173,6 @@ def eval(
     model: Type[nn.Module],
     loader: Type[DataLoader],
     loss_fn,
-    device: torch.device,
 ) -> OrderedDict:
     loss_m = AverageMeter()
     top1_m = AverageMeter()
@@ -150,7 +182,7 @@ def eval(
     model.eval()
 
     for inputs, labels in loader:
-        inputs, labels = inputs.to(device), labels.to(device)
+        inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
 
         outputs = model(inputs)
 
