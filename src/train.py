@@ -35,19 +35,26 @@ parser.add_argument(
     default=0.0001,
     help="""help me !!!!""",
 )
+parser.add_argument(
+    "-b",
+    "--batch_size",
+    type=int,
+    help="""number of data instaces per mini-batch.""",
+)
 
 parser.add_argument(
     "-d",
     "--data_dir",
     metavar="DATA-DIR",
     type=str,
-    help="""""",
+    help="""Path to the directory where the data is stored.""",
 )
 
 parser.add_argument(
     "-s",
     "--save_dir",
     type=str,
+    help="""Path to the directory where the data is stored.""",
 )
 
 args = parser.parse_args()
