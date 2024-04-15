@@ -11,6 +11,7 @@ from timm.utils import AverageMeter, accuracy, update_summary
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+import torchvision.transforms.v2 as v2
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
@@ -35,19 +36,27 @@ parser.add_argument(
     default=0.0001,
     help="""help me !!!!""",
 )
+parser.add_argument(
+    "-b",
+    "--batch_size",
+    type=int,
+    default=32,
+    help="""number of data instaces per mini-batch.""",
+)
 
 parser.add_argument(
     "-d",
     "--data_dir",
     metavar="DATA-DIR",
     type=str,
-    help="""""",
+    help="""Path to the directory where the data is stored.""",
 )
 
 parser.add_argument(
     "-s",
     "--save_dir",
     type=str,
+    help="""Path to the directory where the data is stored.""",
 )
 
 args = parser.parse_args()
@@ -57,6 +66,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def main():
+    print(DEVICE)
 
     # load train_metadata.csv
     meta_df = pd.read_csv(os.path.join(args.data_dir, "train_metadata.csv"))
@@ -70,19 +80,38 @@ def main():
     encoder = LabelEncoder()
     meta_df["primary_label"] = encoder.fit_transform(meta_df["primary_label"])
 
+    # train_test_split
+    train_meta_df, valid_meta_df = train_test_split(meta_df, test_size=1 / 6)
+
     # make dataset
-    dataset = AudioDataset(
-        labels=meta_df["primary_label"].to_numpy(),
-        audio_paths=meta_df["filename"].to_numpy(),
+    train_dataset = AudioDataset(
+        labels=train_meta_df["primary_label"].to_numpy(),
+        audio_paths=train_meta_df["filename"].to_numpy(),
         sampling_rate=20050,
+        transforms=v2.Resize((224, 224)),
     )
 
-    # train_test_split
-    train_dataset, valid_dataset = train_test_split(dataset, test_size=1 / 6)
+    valid_dataset = AudioDataset(
+        labels=valid_meta_df["primary_label"].to_numpy(),
+        audio_paths=valid_meta_df["filename"].to_numpy(),
+        sampling_rate=20050,
+        transforms=v2.Resize((224, 224)),
+    )
 
     # make dataloader
-    train_loader = DataLoader(train_dataset)
-    valid_loader = DataLoader(valid_dataset)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=args.batch_size,
+        pin_memory=True,
+        num_workers=8,
+    )
+    print("making train_loader is over.")
+    valid_loader = DataLoader(
+        valid_dataset,
+        batch_size=args.batch_size,
+        pin_memory=True,
+        num_workers=8,
+    )
 
     # make model instance
     model = Toymodel()
@@ -90,7 +119,7 @@ def main():
 
     # optimizer setup
     optimizer = create_optimizer_v2(
-        model.parameters,
+        model.parameters(),
         opt="adamw",
         lr=args.lr,
         weight_decay=0,
@@ -98,7 +127,7 @@ def main():
     )
 
     # scheduler setup
-    scheduler = create_scheduler_v2(
+    scheduler, _ = create_scheduler_v2(
         optimizer,
         "cosine",
         warmup_prefix=True,
@@ -115,7 +144,7 @@ def main():
     artifact = wandb.Artifact("model", type="model")
 
     # train&eval
-    for epoch in tqdm(range()):
+    for epoch in tqdm(range(args.epochs)):
         scheduler.step(epoch)
 
         train_one_epoch(
