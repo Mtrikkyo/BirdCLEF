@@ -22,6 +22,7 @@ from utils.dataset import AudioDataset
 
 parser = ArgumentParser()
 parser.add_argument(
+    "-e",
     "--epochs",
     metavar="EPOCHS",
     type=int,
@@ -30,16 +31,23 @@ parser.add_argument(
 parser.add_argument(
     "--lr",
     metavar="LEANING_RATE",
-    type=int,
+    type=float,
     default=0.0001,
     help="""help me !!!!""",
 )
 
 parser.add_argument(
+    "-d",
     "--data_dir",
     metavar="DATA-DIR",
     type=str,
     help="""""",
+)
+
+parser.add_argument(
+    "-s",
+    "--save_dir",
+    type=str,
 )
 
 args = parser.parse_args()
