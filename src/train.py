@@ -1,6 +1,7 @@
 #!/root/.pyenv/versions/3.11.5/bin/python
 from argparse import ArgumentParser
 from collections import OrderedDict
+from functools import partial
 import os
 from typing import Type
 
@@ -8,6 +9,7 @@ import pandas as pd
 from timm.optim import create_optimizer_v2
 from timm.scheduler import create_scheduler_v2
 from timm.utils import AverageMeter, accuracy, update_summary
+from timm.models import VisionTransformer
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -23,12 +25,21 @@ from utils.dataset import AudioDataset
 
 parser = ArgumentParser()
 parser.add_argument(
+    "-m",
+    "--model",
+    type=str,
+    choices=["toy", "simple_vit"],
+    default="simple_vit",
+)
+
+parser.add_argument(
     "-e",
     "--epochs",
     metavar="EPOCHS",
     type=int,
     default=300,
 )
+
 parser.add_argument(
     "--lr",
     metavar="LEANING_RATE",
@@ -36,6 +47,7 @@ parser.add_argument(
     default=0.0001,
     help="""help me !!!!""",
 )
+
 parser.add_argument(
     "-b",
     "--batch_size",
@@ -49,6 +61,7 @@ parser.add_argument(
     "--data_dir",
     metavar="DATA-DIR",
     type=str,
+    default="mount/data",
     help="""Path to the directory where the data is stored.""",
 )
 
@@ -63,6 +76,11 @@ args = parser.parse_args()
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+MODEL_LIST = {
+    "toy": Toymodel,
+    "simple_vit": VisionTransformer,
+}
 
 
 def main():
@@ -113,7 +131,7 @@ def main():
     )
 
     # make model instance
-    model = Toymodel()
+    model = MODEL_LIST[args.model]()
     model = model.to(DEVICE)
 
     # optimizer setup
@@ -180,7 +198,7 @@ def main():
         )
         torch.save(model.state_dict(), os.path.join(args.save_dir, "model.pt"))
         artifact.add_file(os.path.join(args.save_dir, "model.pt"))
-        run.log_artifact(artifact)
+    run.log_artifact(artifact)
     run.finish()
 
 
