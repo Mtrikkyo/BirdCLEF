@@ -66,7 +66,6 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def main():
-    print(DEVICE)
 
     # load train_metadata.csv
     meta_df = pd.read_csv(os.path.join(args.data_dir, "train_metadata.csv"))
@@ -105,7 +104,7 @@ def main():
         pin_memory=True,
         num_workers=8,
     )
-    print("making train_loader is over.")
+
     valid_loader = DataLoader(
         valid_dataset,
         batch_size=args.batch_size,
@@ -233,10 +232,10 @@ def eval(
 
     metrics = OrderedDict(
         [
-            ("loss", loss_m),
-            ("top1", top1_m),
-            ("top5", top5_m),
-            ("top10", top10_m),
+            ("loss", loss_m.avg),
+            ("top1", top1_m.avg),
+            ("top5", top5_m.avg),
+            ("top10", top10_m.avg),
         ]
     )
 
