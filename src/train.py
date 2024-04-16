@@ -143,7 +143,7 @@ def main():
     for param in model.parameters():
         param.requires_grad = False
 
-    model.fc = nn.Linear(model.fc.in_features, NUM_CLASSES)
+    model.head = nn.Linear(model.head.in_features, NUM_CLASSES)
     model = model.to(DEVICE)
 
     # optimizer setup
