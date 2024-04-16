@@ -143,7 +143,7 @@ def main():
         model = FineTunedVidionTransformer()
         for param in model.parameters():
             param.requires_grad = False
-        model.head = nn.Linear(model.head.in_features, NUM_CLASSES)
+        model.backbone.head = nn.Linear(model.backbone.head.in_features, NUM_CLASSES)
 
     model = model.to(DEVICE)
 
