@@ -1,2 +1,3 @@
 mount/
+wandb/
 src/*/__pycache__/

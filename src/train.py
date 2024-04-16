@@ -1,6 +1,7 @@
-#!/root/.pyenv/versions/3.11.5/bin/python
+#!/usr/bin/python
 from argparse import ArgumentParser
 from collections import OrderedDict
+from functools import partial
 import os
 from typing import Type
 
@@ -8,6 +9,7 @@ import pandas as pd
 from timm.optim import create_optimizer_v2
 from timm.scheduler import create_scheduler_v2
 from timm.utils import AverageMeter, accuracy, update_summary
+from timm.models import VisionTransformer, create_model
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -23,12 +25,21 @@ from utils.dataset import AudioDataset
 
 parser = ArgumentParser()
 parser.add_argument(
+    "-m",
+    "--model",
+    type=str,
+    choices=["toy", "simple_vit"],
+    default="simple_vit",
+)
+
+parser.add_argument(
     "-e",
     "--epochs",
     metavar="EPOCHS",
     type=int,
     default=300,
 )
+
 parser.add_argument(
     "--lr",
     metavar="LEANING_RATE",
@@ -36,6 +47,7 @@ parser.add_argument(
     default=0.0001,
     help="""help me !!!!""",
 )
+
 parser.add_argument(
     "-b",
     "--batch_size",
@@ -49,6 +61,7 @@ parser.add_argument(
     "--data_dir",
     metavar="DATA-DIR",
     type=str,
+    default="mount/data",
     help="""Path to the directory where the data is stored.""",
 )
 
@@ -63,10 +76,18 @@ args = parser.parse_args()
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+NUM_CLASSES = 182
+
+MODEL_LIST = {
+    "toy": Toymodel,
+    "simple_vit": VisionTransformer,
+}
 
 
 def main():
-    print(DEVICE)
+
+    # make save dir
+    os.makedirs(args.save_dir, mode=777, exist_ok=False)
 
     # load train_metadata.csv
     meta_df = pd.read_csv(os.path.join(args.data_dir, "train_metadata.csv"))
@@ -105,7 +126,7 @@ def main():
         pin_memory=True,
         num_workers=8,
     )
-    print("making train_loader is over.")
+
     valid_loader = DataLoader(
         valid_dataset,
         batch_size=args.batch_size,
@@ -114,7 +135,15 @@ def main():
     )
 
     # make model instance
-    model = Toymodel()
+    # model = MODEL_LIST[args.model]()
+    model = create_model(
+        "vit_base_patch16_224.augreg2_in21k_ft_in1k",
+        pretrained=True,
+    )
+    for param in model.parameters():
+        param.requires_grad = False
+
+    model.head = nn.Linear(model.head.in_features, NUM_CLASSES)
     model = model.to(DEVICE)
 
     # optimizer setup
@@ -142,6 +171,10 @@ def main():
     run = wandb.init(project="BirdCLEF")
     run.save()
     artifact = wandb.Artifact("model", type="model")
+
+    torch.save(model.state_dict(), os.path.join(args.save_dir, "model.pt"))
+    artifact.add_file(os.path.join(args.save_dir, "model.pt"))
+    run.log_artifact(artifact)
 
     # train&eval
     for epoch in tqdm(range(args.epochs)):
@@ -179,9 +212,6 @@ def main():
             write_header=epoch == 0,
             log_wandb=True,
         )
-        torch.save(model.state_dict(), os.path.join(args.save_dir, "model.pt"))
-        artifact.add_file(os.path.join(args.save_dir, "model.pt"))
-        run.log_artifact(artifact)
     run.finish()
 
 
@@ -233,10 +263,10 @@ def eval(
 
     metrics = OrderedDict(
         [
-            ("loss", loss_m),
-            ("top1", top1_m),
-            ("top5", top5_m),
-            ("top10", top10_m),
+            ("loss", loss_m.avg),
+            ("top1", top1_m.avg),
+            ("top5", top5_m.avg),
+            ("top10", top10_m.avg),
         ]
     )
 
