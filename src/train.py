@@ -116,7 +116,13 @@ def main():
         labels=valid_meta_df["primary_label"].to_numpy(),
         audio_paths=valid_meta_df["filename"].to_numpy(),
         sampling_rate=20050,
-        transforms=v2.Resize((224, 224)),
+        transforms=v2.Compose(
+            [
+                v2.RandomCrop((128, 128)),
+                v2.Resize((224, 224)),
+                v2.Lambda(lambda x: x / x.max()),
+            ]
+        ),
     )
 
     # make dataloader
