@@ -139,10 +139,11 @@ def main():
     model = create_model(
         "vit_base_patch16_224.augreg2_in21k_ft_in1k",
         pretrained=True,
-        num_classes=NUM_CLASSES,
     )
     for param in model.parameters():
         param.requires_grad = False
+
+    model.fc = nn.Linear(model.fc.in_features, NUM_CLASSES)
     model = model.to(DEVICE)
 
     # optimizer setup
