@@ -69,6 +69,7 @@ parser.add_argument(
     "-s",
     "--save_dir",
     type=str,
+    default="test",
     help="""Path to the directory where the data is stored.""",
 )
 
@@ -138,7 +139,7 @@ def main():
     )
 
     # model type
-    if args.model_type == "vit":
+    if args.model == "vit":
         model = FineTunedVidionTransformer()
         for param in model.parameters():
             param.requires_grad = False
