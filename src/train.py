@@ -1,4 +1,4 @@
-#!/root/.pyenv/versions/3.11.5/bin/python
+#!/usr/bin/python
 from argparse import ArgumentParser
 from collections import OrderedDict
 from functools import partial
@@ -9,7 +9,7 @@ import pandas as pd
 from timm.optim import create_optimizer_v2
 from timm.scheduler import create_scheduler_v2
 from timm.utils import AverageMeter, accuracy, update_summary
-from timm.models import VisionTransformer
+from timm.models import VisionTransformer, create_model
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -76,6 +76,7 @@ args = parser.parse_args()
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+NUM_CLASSES = 182
 
 MODEL_LIST = {
     "toy": Toymodel,
@@ -134,7 +135,14 @@ def main():
     )
 
     # make model instance
-    model = MODEL_LIST[args.model]()
+    # model = MODEL_LIST[args.model]()
+    model = create_model(
+        "vit_base_patch16_224.augreg2_in21k_ft_in1k",
+        pretrained=True,
+        num_classes=NUM_CLASSES,
+    )
+    for param in model.parameters():
+        param.requires_grad = False
     model = model.to(DEVICE)
 
     # optimizer setup
