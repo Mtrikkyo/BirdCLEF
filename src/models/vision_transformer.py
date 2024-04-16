@@ -9,7 +9,7 @@ from timm.models import create_model
 
 class FineTunedVidionTransformer(nn.Module):
 
-    def __init__(self, num_classes: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
         self.normalize = v2.Normalize(
@@ -19,7 +19,6 @@ class FineTunedVidionTransformer(nn.Module):
         self.backbone = create_model(
             "vit_base_patch16_224.augreg2_in21k_ft_in1k",
             pretrained=True,
-            num_classes=num_classes,
         )
 
     def forward(self, x) -> torch.tensor:
