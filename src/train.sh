@@ -4,4 +4,4 @@ python /workdir/src/train.py \
 --lr 1e-4 \
 -b 32 \
 -d /workdir/mount/data \
--s /workdir/mount/result/test \
+-s /workdir/mount/result/vision_transformer/try01 \
