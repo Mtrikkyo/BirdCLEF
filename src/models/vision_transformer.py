@@ -12,7 +12,9 @@ class FineTunedVidionTransformer(nn.Module):
     def __init__(self, num_classes: int) -> None:
         super().__init__()
 
-        self.normalize = v2.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        self.normalize = v2.Normalize(
+            [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+        )  # Image Net's mean & std.
 
         self.backbone = create_model(
             "vit_base_patch16_224.augreg2_in21k_ft_in1k",
