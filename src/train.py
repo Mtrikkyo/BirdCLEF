@@ -20,7 +20,7 @@ from sklearn.preprocessing import LabelEncoder
 
 import wandb
 
-from models import Toymodel
+from models import Toymodel, FineTunedVidionTransformer
 from utils.dataset import AudioDataset
 
 parser = ArgumentParser()
@@ -28,8 +28,8 @@ parser.add_argument(
     "-m",
     "--model",
     type=str,
-    choices=["toy", "simple_vit"],
-    default="simple_vit",
+    choices=["toy", "vit"],
+    default="vit",
 )
 
 parser.add_argument(
@@ -78,10 +78,7 @@ args = parser.parse_args()
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_CLASSES = 182
 
-MODEL_LIST = {
-    "toy": Toymodel,
-    "simple_vit": VisionTransformer,
-}
+MODEL_LIST = ["toy","vit"]
 
 
 def main():
@@ -140,16 +137,13 @@ def main():
         num_workers=8,
     )
 
-    # make model instance
-    # model = MODEL_LIST[args.model]()
-    model = create_model(
-        "vit_base_patch16_224.augreg2_in21k_ft_in1k",
-        pretrained=True,
-    )
-    for param in model.parameters():
-        param.requires_grad = False
+    # model type
+    if args.model_type=="vit":
+        model = FineTunedVidionTransformer()
+        for param in model.parameters():
+            param.requires_grad = False
+        model.head = nn.Linear(model.head.in_features, NUM_CLASSES)
 
-    model.head = nn.Linear(model.head.in_features, NUM_CLASSES)
     model = model.to(DEVICE)
 
     # optimizer setup
