@@ -9,7 +9,6 @@ import pandas as pd
 from timm.optim import create_optimizer_v2
 from timm.scheduler import create_scheduler_v2
 from timm.utils import AverageMeter, accuracy, update_summary
-from timm.models import VisionTransformer, create_model
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
