@@ -200,7 +200,8 @@ def main():
             log_wandb=True,
         )
         torch.save(model.state_dict(), os.path.join(args.save_dir, "model.pt"))
-        artifact.add_file(os.path.join(args.save_dir, "model.pt"))
+        if epoch == 0:
+            artifact.add_file(os.path.join(args.save_dir, "model.pt"))
     run.log_artifact(artifact)
     run.finish()
 
