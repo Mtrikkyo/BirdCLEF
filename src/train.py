@@ -78,7 +78,7 @@ args = parser.parse_args()
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_CLASSES = 182
 
-MODEL_LIST = ["toy","vit"]
+MODEL_LIST = ["toy", "vit"]
 
 
 def main():
@@ -138,7 +138,7 @@ def main():
     )
 
     # model type
-    if args.model_type=="vit":
+    if args.model_type == "vit":
         model = FineTunedVidionTransformer()
         for param in model.parameters():
             param.requires_grad = False
