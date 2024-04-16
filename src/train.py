@@ -170,7 +170,7 @@ def main():
 
     # initialize of W&B
     run = wandb.init(project="BirdCLEF")
-    run.save()
+    run.save(args.save_dir)
     artifact = wandb.Artifact("model", type="model")
 
     torch.save(model.state_dict(), os.path.join(args.save_dir, "model.pt"))
