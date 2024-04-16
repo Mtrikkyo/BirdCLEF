@@ -1,9 +1,10 @@
-#!/root/.pyenv/versions/3.11.5/bin/python
+#!/usr/bin/python
 """make custom Dataset Class
 """
 
 from typing import Any, Optional
 
+from datetime import datetime
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -72,6 +73,7 @@ class AudioDataset(Dataset):
 if __name__ == "__main__":
     TRAIN_AUDIO_PATH = "/workdir/mount/data/train_audio"
     import pandas as pd
+    from torch.utils.data import DataLoader
 
     metadeta_df = pd.read_csv("/workdir/mount/data/train_metadata.csv")
     metadeta_df["filename"] = metadeta_df["filename"].apply(
@@ -82,7 +84,14 @@ if __name__ == "__main__":
         labels=metadeta_df["primary_label"].to_numpy(),
         audio_paths=metadeta_df["filename"].to_numpy(),
         sampling_rate=22050,
-        transforms=v2.Resize((224, 224)),
+        transforms=v2.Compose(
+            [
+                v2.RandomCrop((128, 128)),
+                v2.Resize((224, 224)),
+                v2.Lambda(lambda x: x / x.max()),
+            ]
+        ),
     )
 
-    print(dataset[0][0].size())
+    img = dataset[100][0].permute(1, 2, 0)
+    print(img.size())
