@@ -3,6 +3,7 @@
 
 import torch
 import torch.nn as nn
+import torchvision.transforms.v2 as v2
 from timm.models import create_model
 
 
@@ -11,6 +12,8 @@ class FineTunedVidionTransformer(nn.Module):
     def __init__(self, num_classes: int) -> None:
         super().__init__()
 
+        self.normalize = v2.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+
         self.backbone = create_model(
             "vit_base_patch16_224.augreg2_in21k_ft_in1k",
             pretrained=True,
@@ -18,6 +21,7 @@ class FineTunedVidionTransformer(nn.Module):
         )
 
     def forward(self, x) -> torch.tensor:
+        x = self.normalize(x)
         x = self.backbone(x)
         return x
 
