@@ -1,4 +1,4 @@
-#!/root/.pyenv/versions/3.11.5/bin/python
+#!/usr/bin/python
 """make custom Dataset Class
 """
 
@@ -84,11 +84,14 @@ if __name__ == "__main__":
         labels=metadeta_df["primary_label"].to_numpy(),
         audio_paths=metadeta_df["filename"].to_numpy(),
         sampling_rate=22050,
-        transforms=v2.Resize((224, 224)),
+        transforms=v2.Compose(
+            [
+                v2.RandomCrop((128, 128)),
+                v2.Resize((224, 224)),
+                v2.Lambda(lambda x: x / x.max()),
+            ]
+        ),
     )
 
-    start_time = datetime.now()
-    loader = DataLoader(dataset, batch_size=32)
-    end_time = datetime.now()
-
-    print(end_time - start_time)
+    img = dataset[100][0].permute(1, 2, 0)
+    print(img.size())
